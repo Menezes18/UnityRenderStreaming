@@ -3,8 +3,9 @@
   "version": "3.1.0",
   "private": true,
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "lint": "eslint public/**/*.js src/**/*.js test/**/*.js"
+    "dev": "ts-node src/index.ts --port 3000 --type websocket --mode public",
+    "build": "tsc -p tsconfig.json",
+    "start": "node build/index.js --port 3000 --type websocket --mode public"
   },
   "devDependencies": {
     "eslint": "^8.23.0",

@@ -1,12 +1,22 @@
 {
-  "include": ["src/**/*", "test/**/*.ts"],
-  "exclude": ["node_modules", "**/*.spec.ts"],
   "compilerOptions": {
     "module": "commonjs",
     "target": "es5",
-    "lib": ["dom","es5"],
+    "lib": ["dom", "es5"],
     "sourceMap": true,
-    "outDir":"build",
-    "rootDir":"src"
-  }
+    "outDir": "build",
+    "rootDir": "src",
+    
+    /* ↓↓↓ habilita importação default de CommonJS ↓↓↓ */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
 }

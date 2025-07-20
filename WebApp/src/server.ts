@@ -1,39 +1,68 @@
-import * as express from 'express';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as morgan from 'morgan';
+import express, { Application } from 'express';
+import path from 'path';
+import fs from 'fs';
+import morgan from 'morgan';
+import cors from 'cors';
+
 import signaling from './signaling';
-import { log, LogLevel } from './log';
 import Options from './class/options';
-import { reset as resetHandler }from './class/httphandler';
+import { reset as resetHandler } from './class/httphandler';
+import { log, LogLevel } from './log';
 
-const cors = require('cors');
+export const createServer = (config: Options): Application => {
+  const app = express();
 
-export const createServer = (config: Options): express.Application => {
-  const app: express.Application = express();
+  // 1) Handler de modo (public/private)
   resetHandler(config.mode);
-  // logging http access
-  if (config.logging != "none") {
+
+  // 2) Logging HTTP
+  if (config.logging !== 'none') {
     app.use(morgan(config.logging));
   }
-  // const signal = require('./signaling');
-  app.use(cors({origin: '*'}));
+
+  // 3) Middlewares básicos
+  app.use(cors({ origin: '*' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
-  app.get('/config', (req, res) => res.json({ useWebSocket: config.type == 'websocket', startupMode: config.mode, logging: config.logging }));
+
+  // 4) Endpoint de configuração
+  app.get('/config', (_req, res) => {
+    res.json({
+      useWebSocket: config.type === 'websocket',
+      startupMode: config.mode,
+      logging:     config.logging,
+    });
+  });
+
+  // 5) Rota de signaling (socket ou http polling)
   app.use('/signaling', signaling);
-  app.use(express.static(path.join(__dirname, '../client/public')));
-  app.use('/module', express.static(path.join(__dirname, '../client/src')));
-  app.get('/', (req, res) => {
-    const indexPagePath: string = path.join(__dirname, '../client/public/index.html');
-    fs.access(indexPagePath, (err) => {
+
+  // 6) Static files do cliente
+  app.use(
+    express.static(path.join(__dirname, '../client/public'))
+  );
+  app.use(
+    '/module',
+    express.static(path.join(__dirname, '../client/src'))
+  );
+
+  // 7) Rota raiz: envia index.html
+  app.get('/', (_req, res) => {
+    const indexPath = path.join(__dirname, '../client/public/index.html');
+    fs.access(indexPath, fs.constants.R_OK, err => {
       if (err) {
-        log(LogLevel.warn, `Can't find file ' ${indexPagePath}`);
-        res.status(404).send(`Can't find file ${indexPagePath}`);
+        log(
+          LogLevel.warn,
+          `Can't find file '${indexPath}'`
+        );
+        res
+          .status(404)
+          .send(`Can't find file ${indexPath}`);
       } else {
-        res.sendFile(indexPagePath);
+        res.sendFile(indexPath);
       }
     });
   });
+
   return app;
 };
